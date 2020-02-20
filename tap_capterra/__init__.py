@@ -7,20 +7,23 @@ from singer import utils, metadata
 REQUIRED_CONFIG_KEYS = ["start_date", "username", "password"]
 LOGGER = singer.get_logger()
 
+
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
 
 # Load schemas from schemas folder
 def load_schemas():
     schemas = {}
 
-    for filename in os.listdir(get_abs_path('schemas')):
-        path = get_abs_path('schemas') + '/' + filename
-        file_raw = filename.replace('.json', '')
+    for filename in os.listdir(get_abs_path("schemas")):
+        path = get_abs_path("schemas") + "/" + filename
+        file_raw = filename.replace(".json", "")
         with open(path) as file:
             schemas[file_raw] = json.load(file)
 
     return schemas
+
 
 def discover():
     raw_schemas = load_schemas()
@@ -34,22 +37,23 @@ def discover():
 
         # create and add catalog entry
         catalog_entry = {
-            'stream': schema_name,
-            'tap_stream_id': schema_name,
-            'schema': schema,
-            'metadata' : [],
-            'key_properties': []
+            "stream": schema_name,
+            "tap_stream_id": schema_name,
+            "schema": schema,
+            "metadata": [],
+            "key_properties": [],
         }
         streams.append(catalog_entry)
 
-    return {'streams': streams}
+    return {"streams": streams}
+
 
 def get_selected_streams(catalog):
-    '''
+    """
     Gets selected streams.  Checks schema's 'selected' first (legacy)
     and then checks metadata (current), looking for an empty breadcrumb
     and mdata with a 'selected' entry
-    '''
+    """
     selected_streams = []
     for stream in catalog["streams"]:
         stream_metadata = metadata.to_map(stream["metadata"])
@@ -58,6 +62,7 @@ def get_selected_streams(catalog):
             selected_streams.append(stream["tap_stream_id"])
 
     return selected_streams
+
 
 def sync(config, state, catalog):
 
@@ -69,8 +74,9 @@ def sync(config, state, catalog):
         stream_schema = stream["schema"]
         if stream_id in selected_stream_ids:
             # TODO: sync code for stream goes here...
-            LOGGER.info('Syncing stream:' + stream_id)
+            LOGGER.info("Syncing stream:" + stream_id)
     return
+
 
 @utils.handle_top_exception(LOGGER)
 def main():
@@ -87,9 +93,10 @@ def main():
         if args.catalog:
             catalog = args.catalog
         else:
-            catalog =  discover()
+            catalog = discover()
 
         sync(args.config, args.state, catalog)
+
 
 if __name__ == "__main__":
     main()
