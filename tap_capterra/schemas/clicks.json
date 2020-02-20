@@ -1,0 +1,38 @@
+{
+  "type": ["null", "object"],
+  "properties": {
+    "date_of_report": {
+      "type": ["null", "string"]
+    },
+    "vendor_name": {
+      "type": ["null", "string"]
+    },
+    "product_name": {
+      "type": ["null", "string"]
+    },
+    "category": {
+      "type": ["null", "string"]
+    },
+    "avg_cpc": {
+      "type": ["null", "number"]
+    },
+    "avg_position": {
+      "type": ["null", "number"]
+    },
+    "clicks": {
+      "type": ["null", "integer"]
+    },
+    "cost": {
+      "type": ["null", "number"]
+    },
+    "channel": {
+      "type": ["null", "string"]
+    },
+    "country": {
+      "type": ["null", "string"]
+    },
+    "email": {
+      "type": ["null", "string"]
+    }
+  }
+}
