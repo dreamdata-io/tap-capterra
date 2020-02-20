@@ -6,42 +6,41 @@ from singer import utils, metadata
 
 REQUIRED_CONFIG_KEYS = ["start_date", "username", "password"]
 LOGGER = singer.get_logger()
+STREAMS = {
+    "clicks": {
+        "key_properties": ["date_of_report"],
+        "valid_replication_keys": ["date_of_report"],
+    }
+}
 
 
-def get_abs_path(path):
-    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+def get_abs_path(filepath):
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), filepath)
 
 
-# Load schemas from schemas folder
-def load_schemas():
-    schemas = {}
-
-    for filename in os.listdir(get_abs_path("schemas")):
-        path = get_abs_path("schemas") + "/" + filename
-        file_raw = filename.replace(".json", "")
-        with open(path) as file:
-            schemas[file_raw] = json.load(file)
-
-    return schemas
+def load_schema():
+    path = get_abs_path("schemas/clicks.json")
+    return utils.load_json(path)
 
 
 def discover():
-    raw_schemas = load_schemas()
+    schema = load_schema()
     streams = []
 
-    for schema_name, schema in raw_schemas.items():
+    for tap_stream_id, props in STREAMS.items():
+        stream_key_properties = props.get("key_properties")
+        mdata = metadata.get_standard_metadata(
+            schema=schema,
+            key_properties=stream_key_properties,
+            valid_replication_keys=STREAMS.get("valid_replication_keys"),
+        )
 
-        # TODO: populate any metadata and stream's key properties here..
-        stream_metadata = []
-        stream_key_properties = []
-
-        # create and add catalog entry
         catalog_entry = {
-            "stream": schema_name,
-            "tap_stream_id": schema_name,
+            "stream": tap_stream_id,
+            "tap_stream_id": tap_stream_id,
             "schema": schema,
-            "metadata": [],
-            "key_properties": [],
+            "metadata": mdata,
+            "key_properties": stream_key_properties,
         }
         streams.append(catalog_entry)
 
