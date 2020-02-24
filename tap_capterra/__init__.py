@@ -2,7 +2,9 @@
 import os
 import json
 import singer
-from singer import utils, metadata
+from singer import utils, metadata, Catalog, CatalogEntry, Schema
+import sys
+from tap_capterra.capterra import Capterra
 
 REQUIRED_CONFIG_KEYS = ["start_date", "username", "password"]
 LOGGER = singer.get_logger()
@@ -51,23 +53,19 @@ def do_discover():
     catalog_dict = catalog.to_dict()
     json.dump(catalog_dict, sys.stdout, indent="  ", sort_keys=True)
 
-    selected_stream_ids = get_selected_streams(catalog)
 
-    # Loop over streams in catalog
-    for stream in catalog["streams"]:
-        stream_id = stream["tap_stream_id"]
-        stream_schema = stream["schema"]
-        if stream_id in selected_stream_ids:
-            # TODO: sync code for stream goes here...
-            LOGGER.info("Syncing stream:" + stream_id)
+def sync(catalog, config, state=None):
+    for catalog_entry in catalog.streams:
+        # Loop over streams in catalog
+        capterra = Capterra(catalog_entry, config)
+        capterra.stream(state)
     return
 
 
 @utils.handle_top_exception(LOGGER)
 def main():
 
-    # Parse command line arguments
-    args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    args = utils.parse_args([])
 
     if args.discover:
         do_discover()
@@ -77,7 +75,9 @@ def main():
         else:
             catalog = discover()
 
-        sync(args.config, args.state, catalog)
+        sync(
+            catalog, args.config, args.state,
+        )
 
 
 if __name__ == "__main__":
