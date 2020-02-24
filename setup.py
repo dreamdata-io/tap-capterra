@@ -9,7 +9,7 @@ setup(
     url="http://singer.io",
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["tap_capterra"],
-    install_requires=["singer-python>=5.0.12", "requests",],
+    install_requires=["singer-python>=5.0.12", "requests", "ratelimit", "tqdm"],
     entry_points="""
     [console_scripts]
     tap-capterra=tap_capterra:main
