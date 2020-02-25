@@ -2,6 +2,7 @@
   "type": ["null", "object"],
   "properties": {
     "date_of_report": {
+      "format": "date-time",
       "type": ["null", "string"]
     },
     "vendor_name": {
