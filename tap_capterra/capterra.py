@@ -24,12 +24,12 @@ class Capterra:
             self.key_properties,
             bookmark_properties="date_of_report",
         )
-        access_token = self.config.get("access_token")
+        api_key = self.config.get("api_key")
         prev_bookmark = None
         start_date, end_date = self.__get_start_end(state)
         with Transformer() as transformer:
             try:
-                for click in get_clicks(start_date, end_date, access_token):
+                for click in get_clicks(start_date, end_date, api_key):
                     record = transformer.transform(click, self.schema, self.mdata,)
                     singer.write_record(self.tap_stream_id, record)
                     new_bookmark = record[self.bookmark_key]
@@ -58,7 +58,7 @@ class Capterra:
             logger.info(f"using 'start_date' from config: {default_date}")
             return default_date, end_date
 
-        account_record = state.get(self.tap_stream_id, None)
+        account_record = state["bookmarks"].get(self.tap_stream_id, None)
         if not account_record:
             logger.info(f"using 'start_date' from config: {default_date}")
             return default_date, end_date

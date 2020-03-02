@@ -10,7 +10,7 @@ FIVE_MINUTES = 300
 logger = singer.get_logger()
 
 
-def get_clicks(start_date, end_date, access_token):
+def get_clicks(start_date, end_date, api_key):
     params = None
     if start_date > end_date:
         logger.error(f"start date: {start_date} is larger than end date: {end_date} ")
@@ -20,9 +20,9 @@ def get_clicks(start_date, end_date, access_token):
         "unit": "day",
     }
     for date in tqdm(rrule(DAILY, dtstart=start_date, until=end_date), **kwargs):
-        params = {"start_date": date, "end_date": date}
+        params = {"start_date": date.date(), "end_date": date.date()}
         while True:
-            data, scroll_id = call_api(params, access_token)
+            data, scroll_id = call_api(params, api_key)
             params = {"scroll_id": scroll_id}
             if data:
                 yield from data
@@ -32,13 +32,13 @@ def get_clicks(start_date, end_date, access_token):
 
 
 @limits(calls=5000, period=FIVE_MINUTES)
-def call_api(params, access_token):
+def call_api(params, api_key):
     try:
         response = SESSION.get(
             "https://public-api.capterra.com/v1/clicks",
             headers={
                 "Accept": "application/json",
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {api_key}",
             },
             params=params,
         )
