@@ -22,12 +22,9 @@ class Capterra:
         )
         api_key = self.config.get("api_key")
         prev_bookmark = None
-        start_date, end_date = self.__get_start_end(state)
-        with Transformer() as transformer:
+        with singer.metrics.record_counter(tap_stream_id) as counter:
             try:
-                for click in get_clicks(start_date, end_date, api_key):
-                    record = transformer.transform(click, self.schema, self.mdata,)
-                    singer.write_record(self.tap_stream_id, record)
+                    counter.increment(1)
                     new_bookmark = record[self.bookmark_key]
                     if not prev_bookmark:
                         prev_bookmark = new_bookmark
