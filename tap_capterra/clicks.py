@@ -44,20 +44,12 @@ def get_clicks(start_date, end_date, api_key):
 )
 @limits(calls=5000, period=FIVE_MINUTES)
 def call_api(params, api_key):
-    try:
-        response = SESSION.get(
-            "https://public-api.capterra.com/v1/clicks",
-            headers={
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key}",
-            },
-            params=params,
-        )
-        response.raise_for_status()
-    except HTTPError as http_err:
-        logger.error(f"HTTP error occurred: {http_err}")
-    except Exception as err:
-        logger.error(f"Other error occurred: {err}")
+    response = SESSION.get(
+        "https://public-api.capterra.com/v1/clicks",
+        headers={"Accept": "application/json", "Authorization": f"Bearer {api_key}"},
+        params=params,
+    )
+    response.raise_for_status()
     response = response.json()
     data = response["data"]
     scroll_id = response.get("scroll_id", None)
