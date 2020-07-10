@@ -9,11 +9,7 @@ logger = singer.get_logger()
 
 
 class Capterra:
-    def __init__(self, catalog: CatalogEntry, config):
-        self.tap_stream_id = catalog.tap_stream_id
-        self.schema = catalog.schema.to_dict()
-        self.key_properties = catalog.key_properties
-        self.mdata = metadata.to_map(catalog.metadata)
+    def __init__(self, config: Dict):
         self.config = config
         self.bookmark_key = "date_of_report"
 
