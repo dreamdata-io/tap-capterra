@@ -1,5 +1,7 @@
 import requests
 from ratelimit import limits
+import ratelimit
+import backoff
 from dateutil.rrule import rrule, DAILY
 import singer
 from requests.exceptions import HTTPError
@@ -31,6 +33,15 @@ def get_clicks(start_date, end_date, api_key):
                 break
 
 
+@backoff.on_exception(
+    backoff.expo,
+    (
+        requests.exceptions.RequestException,
+        requests.exceptions.HTTPError,
+        ratelimit.exception.RateLimitException,
+    ),
+    max_tries=5,
+)
 @limits(calls=5000, period=FIVE_MINUTES)
 def call_api(params, api_key):
     try:
