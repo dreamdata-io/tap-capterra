@@ -5,7 +5,6 @@ import backoff
 from dateutil.rrule import rrule, DAILY
 import singer
 from requests.exceptions import HTTPError
-from tqdm import tqdm
 
 SESSION = requests.Session()
 FIVE_MINUTES = 300
@@ -21,7 +20,7 @@ def get_clicks(start_date, end_date, api_key):
         "total": len(list(rrule(DAILY, dtstart=start_date, until=end_date))),
         "unit": "day",
     }
-    for date in tqdm(rrule(DAILY, dtstart=start_date, until=end_date), **kwargs):
+    for date in rrule(DAILY, dtstart=start_date, until=end_date):
         params = {"start_date": date.date(), "end_date": date.date()}
         while True:
             data, scroll_id = call_api(params, api_key)
