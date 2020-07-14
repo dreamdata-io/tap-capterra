@@ -34,11 +34,7 @@ def get_clicks(start_date, end_date, api_key):
 
 @backoff.on_exception(
     backoff.expo,
-    (
-        requests.exceptions.RequestException,
-        requests.exceptions.HTTPError,
-        ratelimit.exception.RateLimitException,
-    ),
+    (requests.exceptions.RequestException, ratelimit.exception.RateLimitException,),
     max_tries=5,
 )
 @limits(calls=5000, period=FIVE_MINUTES)
