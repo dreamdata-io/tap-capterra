@@ -1,6 +1,5 @@
 import singer
-from singer import metadata, CatalogEntry, Transformer
-from typing import Union
+from typing import Union, Optional, Dict
 from datetime import timedelta, datetime
 from dateutil import parser
 from tap_capterra.clicks import get_clicks
@@ -9,43 +8,40 @@ logger = singer.get_logger()
 
 
 class Capterra:
-    def __init__(self, catalog: CatalogEntry, config):
-        self.tap_stream_id = catalog.tap_stream_id
-        self.schema = catalog.schema.to_dict()
-        self.key_properties = catalog.key_properties
-        self.mdata = metadata.to_map(catalog.metadata)
+    def __init__(self, config: Dict):
         self.config = config
         self.bookmark_key = "date_of_report"
 
-    def stream(self, state):
-        singer.write_schema(
-            self.tap_stream_id,
-            self.schema,
-            self.key_properties,
-            bookmark_properties="date_of_report",
-        )
-        api_key = self.config.get("api_key")
+    def stream(self, tap_stream_id: str, state: Optional[datetime] = None):
         prev_bookmark = None
-        start_date, end_date = self.__get_start_end(state)
-        with Transformer() as transformer:
+        start_date, end_date = self.__get_start_end(
+            state=state, tap_stream_id=tap_stream_id
+        )
+        with singer.metrics.record_counter(tap_stream_id) as counter:
             try:
-                for click in get_clicks(start_date, end_date, api_key):
-                    record = transformer.transform(click, self.schema, self.mdata,)
-                    singer.write_record(self.tap_stream_id, record)
+                for record in get_clicks(
+                    start_date, end_date, self.config.get("api_key")
+                ):
+                    singer.write_record(tap_stream_id, record)
+                    counter.increment(1)
                     new_bookmark = record[self.bookmark_key]
                     if not prev_bookmark:
                         prev_bookmark = new_bookmark
 
                     if prev_bookmark < new_bookmark:
-                        state = self.__advance_bookmark(state, prev_bookmark)
+                        state = self.__advance_bookmark(
+                            state=state,
+                            bookmark=prev_bookmark,
+                            tap_stream_id=tap_stream_id,
+                        )
                         prev_bookmark = new_bookmark
 
-            except Exception:
-                self.__advance_bookmark(state, prev_bookmark)
-                raise
-        return self.__advance_bookmark(state, prev_bookmark)
+            finally:
+                self.__advance_bookmark(
+                    state=state, bookmark=prev_bookmark, tap_stream_id=tap_stream_id,
+                )
 
-    def __get_start_end(self, state: dict):
+    def __get_start_end(self, state: Dict, tap_stream_id: str):
         default_date = (datetime.utcnow() + timedelta(weeks=4)).date()
         end_date = (datetime.utcnow() - timedelta(1)).date()
         logger.info(f"sync data until: {end_date}")
@@ -58,7 +54,7 @@ class Capterra:
             logger.info(f"using 'start_date' from config: {default_date}")
             return default_date, end_date
 
-        account_record = state["bookmarks"].get(self.tap_stream_id, None)
+        account_record = state["bookmarks"].get(tap_stream_id, None)
         if not account_record:
             logger.info(f"using 'start_date' from config: {default_date}")
             return default_date, end_date
@@ -76,7 +72,9 @@ class Capterra:
         logger.info(f"using 'start_date' from previous state: {current_bookmark}")
         return new_date, end_date
 
-    def __advance_bookmark(self, state: dict, bookmark: Union[str, datetime, None]):
+    def __advance_bookmark(
+        self, state: dict, bookmark: Union[str, datetime, None], tap_stream_id: str
+    ):
         if not bookmark:
             singer.write_state(state)
             return state
@@ -91,7 +89,7 @@ class Capterra:
             )
 
         state = singer.write_bookmark(
-            state, self.tap_stream_id, self.bookmark_key, bookmark_datetime.isoformat()
+            state, tap_stream_id, self.bookmark_key, bookmark_datetime.isoformat()
         )
         singer.write_state(state)
         return state
